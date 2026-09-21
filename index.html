@@ -76,10 +76,10 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
-                        GANG SYSTEM
+                        MafakTod GANG
                         <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-gang-accent/20 text-gang-neon border border-gang-accent/40">v2.5</span>
                     </h1>
-                    <p class="text-xs text-gray-400">เช็คชื่อ • ส่งของ • คลังกองกลาง • รายการปรับเงิน</p>
+                    <p class="text-xs text-gray-400">เช็คชื่อ • ส่งของ • คลัง • รายการปรับเงิน</p>
                 </div>
             </div>
 
@@ -87,11 +87,11 @@
             <div class="flex items-center gap-3">
                 <div id="roleBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/80 border border-gray-700 text-xs font-medium text-gray-300">
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
-                    <span>สมาชิกทั่วไป (ดูได้อย่างเดียว)</span>
+                    <span>สมาชิกทั่วไป</span>
                 </div>
                 <button id="authBtn" onclick="toggleAuthModal()" class="px-4 py-2 rounded-xl bg-gang-accent hover:bg-red-700 text-white font-medium text-sm transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-red-900/50">
                     <i class="ph-bold ph-key"></i>
-                    <span id="authBtnText">ปลดล็อกยศใหญ่</span>
+                    <span id="authBtnText">ปลดล็อกหัวเเก๊ง</span>
                 </button>
             </div>
         </div>
@@ -144,15 +144,15 @@
             <div class="flex flex-wrap gap-1">
                 <button onclick="switchTab('attendance')" id="tabBtn-attendance" class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 bg-gang-accent text-white shadow-md">
                     <i class="ph-bold ph-checks"></i>
-                    1. เช็คชื่อเข้าแก๊ง
+                    1. เช็คชื่อ
                 </button>
                 <button onclick="switchTab('items')" id="tabBtn-items" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 flex items-center gap-2">
                     <i class="ph-bold ph-box-arrow-up"></i>
-                    2. เช็คการส่งของภารกิจ
+                    2. เช็คการส่งของ
                 </button>
                 <button onclick="switchTab('vault')" id="tabBtn-vault" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 flex items-center gap-2">
                     <i class="ph-bold ph-vault"></i>
-                    3. คลังของกองกลาง
+                    3. คลัง
                 </button>
                 <button onclick="switchTab('fines')" id="tabBtn-fines" class="px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-all duration-200 flex items-center gap-2">
                     <i class="ph-bold ph-receipt"></i>
@@ -500,28 +500,21 @@
 
         // Initial Data Structure
         let members = JSON.parse(localStorage.getItem('gang_members')) || [
-            { id: 1, name: "หัวหน้ามังกร_V1", role: "หัวหน้าแก๊ง", status: "มา", itemDelivered: true, itemTime: "18:30" },
-            { id: 2, name: "เสือเล็ก_007", role: "มือขวา / เสนาธิการ", status: "มา", itemDelivered: true, itemTime: "19:15" },
-            { id: 3, name: "บอสสายลุย", role: "หน่วยตะลุย", status: "ลา", itemDelivered: false, itemTime: "-" },
-            { id: 4, name: "เก่ง_ขาซิ่ง", role: "หน่วยซิ่ง / มือขับ", status: "ขาด", itemDelivered: false, itemTime: "-" }
+            
         ];
 
         let requiredItemsText = localStorage.getItem('gang_required_items') || "เงินกองกลาง 5,000$ + ยา 10 ขวด";
 
         let vaultItems = JSON.parse(localStorage.getItem('gang_vault')) || [
-            { id: 101, name: "ปืน AK-47", category: "อาวุธ/ยุทโธปกรณ์", qty: 12, updatedAt: "2026-09-20 20:10" },
-            { id: 102, name: "กระสุน 9mm (กล่อง)", category: "อาวุธ/ยุทโธปกรณ์", qty: 150, updatedAt: "2026-09-21 11:30" },
-            { id: 103, name: "ยาฉีดบาดแผล", category: "ยา/เวชภัณฑ์", qty: 85, updatedAt: "2026-09-21 12:00" },
-            { id: 104, name: "เงินกองกลาง ($)", category: "เงิน/ของมีค่า", qty: 125000, updatedAt: "2026-09-21 12:30" }
+            
         ];
 
         let vaultLogs = JSON.parse(localStorage.getItem('gang_vault_logs')) || [
-            "2026-09-21 12:30 - เติม เงินกองกลาง ($) จำนวน +25,000 (โดย ยศใหญ่)",
-            "2026-09-21 12:00 - เบิก ยาฉีดบาดแผล จำนวน -15 (โดย ยศใหญ่)"
+            
         ];
 
         let finesList = JSON.parse(localStorage.getItem('gang_fines')) || [
-            { id: 1, memberId: 4, memberName: "เก่ง_ขาซิ่ง", amount: 5000, reason: "ขาดซ้อมแก๊งประจำสัปดาห์", date: "2026-09-21", dueDate: "2026-09-25", paid: false, by: "ยศใหญ่" }
+            
         ];
 
         // Save Data Helper
@@ -576,14 +569,14 @@
         function handleAuthSubmit(e) {
             e.preventDefault();
             const pass = document.getElementById('authPasswordInput').value;
-            if (pass === "1234" || pass === "gang99") {
+            if (pass === "447" || pass === "MafakTod899") {
                 isAdmin = true;
                 document.getElementById('authModal').classList.add('hidden');
                 document.getElementById('authPasswordInput').value = "";
                 alert("ปลดล็อกโหมด 'ยศใหญ่' สำเร็จ!");
                 renderAll();
             } else {
-                alert("รหัสผ่านไม่ถูกต้อง! (ลองใช้: 1234 หรือ gang99)");
+                alert("รหัสผ่านไม่ถูกต้อง!");
             }
         }
 
@@ -645,8 +638,8 @@
 
             filtered.forEach(m => {
                 let statusBadge = '';
-                if (m.status === 'มา') statusBadge = `<span class="px-2.5 py-1 rounded-full bg-green-500/20 text-green-400 text-xs border border-green-500/30">🟢 มาปฏิบัติงาน</span>`;
-                else if (m.status === 'ลา') statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs border border-amber-500/30">🟡 ลาป่วย/ติดธุระ</span>`;
+                if (m.status === 'มา') statusBadge = `<span class="px-2.5 py-1 rounded-full bg-green-500/20 text-green-400 text-xs border border-green-500/30">🟢 มา</span>`;
+                else if (m.status === 'ลา') statusBadge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs border border-amber-500/30">🟡 ลา</span>`;
                 else statusBadge = `<span class="px-2.5 py-1 rounded-full bg-red-500/20 text-red-400 text-xs border border-red-500/30">🔴 ขาด</span>`;
 
                 const tr = document.createElement('tr');
