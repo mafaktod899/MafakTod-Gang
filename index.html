@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GANG CONTROL v3.0 - ระบบเช็คชื่อ คลังแก๊ง และระบบปรับเงิน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        darkbg: '#0a0c10',
+                        cardbg: '#121620',
+                        neonPurple: '#a855f7',
+                        neonPink: '#ec4899',
+                        neonCyan: '#06b6d4',
+                        neonGreen: '#10b981',
+                        neonGold: '#eab308',
+                        neonRed: '#ef4444'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0a0c10;
+            color: #e2e8f0;
+            font-family: 'Kanit', sans-serif;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.12) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .neon-border-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+        }
+        
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+        }
+
+        .neon-border-gold {
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.25);
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+
+        .neon-text-purple {
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+        }
+
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        }
+
+        .glass-panel {
+            background: rgba(18, 22, 32, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0c10;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262c3a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a855f7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-purple-500 selection:text-white">
+
+    <header class="sticky top-0 z-40 glass-panel border-b border-gray-800 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <!-- Gang Brand/Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-600 to-cyan-400 p-0.5 shadow-lg shadow-purple-900/40">
+                    <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                        <i class="fa-solid font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 text-xl fa-shield-halved"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent uppercase">
+                        Viper Cartel
+                    </h1>
+                    <p class="text-xs text-gray-400 font-medium">GANG CONTROL SYSTEM v3.0</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar Quick View -->
+            <div class="hidden md:flex items-center space-x-6 text-sm">
+                <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                    <i class="fa-solid fa-users text-purple-400"></i>
+                    <span class="text-gray-400">สมาชิก:</span>
+                    <span id="stat-member-count" class="font-bold text-white">0</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                    <i class="fa-solid fa-wallet text-emerald-400"></i>
+                    <span class="text-gray-400">คลังแก๊ง:</span>
+                    <span id="stat-vault-money" class="font-bold text-emerald-400">$0</span>
+                </div>
+                <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-gray-800">
+                    <i class="fa-solid fa-circle-exclamation text-rose-400"></i>
+                    <span class="text-gray-400">ค่าปรับค้าง:</span>
+                    <span id="stat-pending-fines" class="font-bold text-rose-400">$0</span>
+                </div>
+            </div>
+
+            <!-- Admin Mode Controls -->
+            <div class="flex items-center space-x-3">
+                <button id="admin-toggle-btn" onclick="toggleAdminModal()" class="flex items-center space-x-2 bg-gradient-to-r from-purple-900/40 to-slate-800 hover:from-purple-800/60 hover:to-slate-700 text-purple-300 border border-purple-500/40 px-3.5 py-1.5 rounded-xl text-sm font-medium transition duration-200">
+                    <i id="admin-icon" class="fa-solid fa-lock"></i>
+                    <span id="admin-status-text">โหมดปกติ</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-4 lg:p-8 flex-grow space-y-6">
+
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap gap-2 p-1.5 bg-slate-900/90 rounded-2xl border border-gray-800/80 glass-panel">
+            <button onclick="switchTab('attendance')" id="tab-btn-attendance" class="tab-btn active flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-semibold transition duration-200 flex items-center justify-center space-x-2 bg-purple-600 text-white shadow-lg shadow-purple-900/40">
+                <i class="fa-solid fa-clipboard-user"></i>
+                <span>1. เช็คชื่อแก๊ง</span>
+            </button>
+            <button onclick="switchTab('deliveries')" id="tab-btn-deliveries" class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-semibold text-gray-400 hover:text-white transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+                <span>2. ส่งของประจำวัน</span>
+            </button>
+            <button onclick="switchTab('vault')" id="tab-btn-vault" class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-semibold text-gray-400 hover:text-white transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-vault"></i>
+                <span>3. คลังกองกลาง</span>
+            </button>
+            <button onclick="switchTab('fines')" id="tab-btn-fines" class="tab-btn flex-1 min-w-[120px] py-2.5 px-4 rounded-xl text-sm font-semibold text-gray-400 hover:text-white transition duration-200 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-gavel"></i>
+                <span>4. รายการโดนปรับ</span>
+                <span id="fine-badge" class="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span>
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: ATTENDANCE ================= -->
+        <section id="tab-attendance" class="tab-content space-y-6">
+            <!-- Controls Bar -->
+            <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-gray-800">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-calendar-day text-purple-400 text-xl"></i>
+                    <div>
+                        <h2 class="text-base font-bold text-white">ระบบเช็คชื่อสมาชิกประจำวัน</h2>
+                        <p class="text-xs text-gray-400">วันที่: <span id="current-date-text" class="text-purple-300"></span></p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openAddMemberModal()" class="admin-only hidden bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition duration-200 shadow-lg shadow-purple-900/30 flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>เพิ่มสมาชิกใหม่</span>
+                    </button>
+                    <button onclick="resetDailyAttendance()" class="admin-only hidden bg-slate-800 hover:bg-slate-700 text-gray-300 border border-gray-700 px-3.5 py-2 rounded-xl text-sm font-medium transition duration-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>รีเซ็ตวันใหม่</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Attendance Cards Grid -->
+            <div id="attendance-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamic Content Loaded via JS -->
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: DELIVERIES ================= -->
+        <section id="tab-deliveries" class="tab-content hidden space-y-6">
+            <div class="bg-gradient-to-r from-cyan-950/40 via-slate-900 to-slate-900 p-6 rounded-2xl border border-cyan-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-box-archive text-cyan-400"></i>
+                        ภารกิจส่งของประจำวัน (Daily Quota)
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">เป้าหมายประจำวัน: <span class="text-cyan-300 font-bold">ยาเสพติด/อาวุธ 500 ชิ้น / คน</span></p>
+                </div>
+                <div class="bg-slate-950/80 px-4 py-2 rounded-xl border border-gray-800 text-right">
+                    <span class="text-xs text-gray-400 block">ส่งครบแล้วทั้งหมด</span>
+                    <span id="delivery-progress-text" class="text-lg font-extrabold text-cyan-400">0 / 0 คน</span>
+                </div>
+            </div>
+
+            <!-- Deliveries Table -->
+            <div class="glass-panel rounded-2xl border border-gray-800 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-slate-950/80 text-xs uppercase text-gray-400 border-b border-gray-800">
+                            <tr>
+                                <th class="p-4">สมาชิก</th>
+                                <th class="p-4">ยศ/ตำแหน่ง</th>
+                                <th class="p-4">เป้าหมาย</th>
+                                <th class="p-4">ส่งแล้ว</th>
+                                <th class="p-4">สถานะ</th>
+                                <th class="p-4 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deliveries-tbody" class="divide-y divide-gray-800/60">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: VAULT ================= -->
+        <section id="tab-vault" class="tab-content hidden space-y-6">
+            <!-- Vault Overview Header -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-emerald-500/30 neon-border-cyan flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                        <i class="fa-solid fa-vault text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">ยอดเงินในคลังกลาง</p>
+                        <h3 id="vault-money-display" class="text-2xl font-black text-emerald-400">$0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-gray-800 flex items-center space-x-4">
+                    <div class="p-3 bg-purple-500/20 text-purple-400 rounded-xl">
+                        <i class="fa-solid fa-boxes-stacked text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">รายการของในสต็อก</p>
+                        <h3 id="vault-items-count" class="text-2xl font-bold text-white">0 ชนิด</h3>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-gray-800 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">ธุรกรรมคลัง</p>
+                        <p class="text-sm font-semibold text-gray-300">ฝาก/เบิก/อัปเดต</p>
+                    </div>
+                    <button onclick="openVaultTransactionModal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/30 transition duration-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-right-left"></i>
+                        <span>ทำรายการฝาก/เบิก</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vault Inventory Grid -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-cubes text-purple-400"></i> สต็อกไอเทมกองกลาง
+                    </h3>
+                    <button onclick="openAddItemModal()" class="admin-only hidden bg-slate-800 hover:bg-slate-700 text-xs text-purple-300 border border-purple-500/30 px-3 py-1.5 rounded-lg">
+                        + เพิ่มชนิดไอเทม
+                    </button>
+                </div>
+                <div id="vault-items-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <!-- Dynamic Items Cards -->
+                </div>
+            </div>
+
+            <!-- Recent Vault Logs -->
+            <div class="glass-panel p-5 rounded-2xl border border-gray-800">
+                <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> ประวัติการฝาก-เบิก ล่าสุด
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-slate-950/60 uppercase text-gray-400">
+                            <tr>
+                                <th class="p-2.5">เวลา</th>
+                                <th class="p-2.5">ผู้ทำรายการ</th>
+                                <th class="p-2.5">การกระทำ</th>
+                                <th class="p-2.5">รายการ</th>
+                                <th class="p-2.5">จำนวน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vault-logs-tbody" class="divide-y divide-gray-800/40">
+                            <!-- Dynamic Logs -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: FINES ================= -->
+        <section id="tab-fines" class="tab-content hidden space-y-6">
+            <div class="bg-gradient-to-r from-rose-950/40 via-slate-900 to-slate-900 p-6 rounded-2xl border border-rose-500/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-gavel text-rose-400"></i>
+                        ระบบปรับเงินและค่าปรับค้างชำระ (Fines Management)
+                    </h2>
+                    <p class="text-sm text-gray-400 mt-1">ยศใหญ่สามารถกดปรับเงินสมาชิกจากตารางเช็คชื่อหรือสร้างใบปรับใหม่ได้ที่นี่</p>
+                </div>
+                <button onclick="openIssueFineModal()" class="admin-only hidden bg-rose-600 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition duration-200 shadow-lg shadow-rose-900/30 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    <span>สั่งปรับเงินสมาชิก</span>
+                </button>
+            </div>
+
+            <!-- Fines Table -->
+            <div class="glass-panel rounded-2xl border border-gray-800 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-slate-950/80 text-xs uppercase text-gray-400 border-b border-gray-800">
+                            <tr>
+                                <th class="p-4">วันที่สั่งปรับ</th>
+                                <th class="p-4">สมาชิกผู้โดนปรับ</th>
+                                <th class="p-4">เหตุผลการสั่งปรับ</th>
+                                <th class="p-4">ยอดเงินปรับ</th>
+                                <th class="p-4">ผู้สั่งปรับ</th>
+                                <th class="p-4">สถานะ</th>
+                                <th class="p-4 text-center">การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fines-tbody" class="divide-y divide-gray-800/60">
+                            <!-- Dynamic Fine Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-800/80 glass-panel py-4 px-6 text-center text-xs text-gray-500 mt-8">
+        <p>© 2026 VIPER CARTEL - Gang Management & Vault System. Designed for GTA Roleplay Community.</p>
+    </footer>
+
+    <!-- ================= MODALS & DIALOGS ================= -->
+
+    <!-- Modal 1: Unlock Admin -->
+    <div id="modal-admin" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-sm w-full p-6 space-y-4 neon-border-purple">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-purple-400"></i> ปลดล็อกโหมดยศใหญ่ (Admin)
+                </h3>
+                <button onclick="toggleAdminModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-gray-400">ใส่รหัสผ่านยศใหญ่เพื่อสิทธิ์แก้ไขข้อมูลและสั่งปรับเงิน (รหัสเริ่มต้น: <span class="text-purple-400 font-mono font-bold">1234</span>)</p>
+            <div>
+                <input type="password" id="admin-pass-input" placeholder="ใส่รหัสผ่าน..." class="w-full bg-slate-950 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 text-center font-mono tracking-widest">
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="toggleAdminModal()" class="w-1/2 bg-slate-800 hover:bg-slate-700 text-gray-300 py-2 rounded-xl text-sm">ยกเลิก</button>
+                <button onclick="unlockAdmin()" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-xl text-sm font-bold shadow-lg shadow-purple-900/40">ยืนยันรหัส</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Issue Fine -->
+    <div id="modal-fine" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-rose-500/40 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gavel text-rose-400"></i> ออกใบสั่งปรับเงินสมาชิก
+                </h3>
+                <button onclick="closeFineModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="fine-form" onsubmit="handleIssueFine(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">สมาชิกที่ต้องการปรับ</label>
+                    <select id="fine-member-select" required class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-rose-500">
+                        <!-- Options generated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">จำนวนเงินปรับ ($)</label>
+                    <input type="number" id="fine-amount-input" min="1" step="100" required placeholder="เช่น 5000" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-rose-500">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">เหตุผลการสั่งปรับ</label>
+                    <textarea id="fine-reason-input" required rows="3" placeholder="เช่น ขาดสภาโดยไม่แจ้ง, ไม่ส่งของประจำวัน" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-rose-500"></textarea>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeFineModal()" class="w-1/2 bg-slate-800 text-gray-300 py-2 rounded-xl text-sm">ยกเลิก</button>
+                    <button type="submit" class="w-1/2 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-xl text-sm font-bold shadow-lg shadow-rose-900/40">ยืนยันสั่งปรับ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Vault Transaction -->
+    <div id="modal-vault-tx" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-right-left text-emerald-400"></i> ทำรายการ ฝาก-เบิก กองกลาง
+                </h3>
+                <button onclick="closeVaultModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="vault-tx-form" onsubmit="handleVaultTransaction(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">ผู้ทำรายการ</label>
+                    <select id="vault-tx-member" required class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm">
+                        <!-- Dynamic Options -->
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">ประเภทการทำรายการ</label>
+                    <select id="vault-tx-type" onchange="toggleVaultInputTypes()" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm">
+                        <option value="deposit-money">ฝากเงินสด ($)</option>
+                        <option value="withdraw-money">เบิกเงินสด ($)</option>
+                        <option value="deposit-item">ฝากไอเทม/สิ่งของ</option>
+                        <option value="withdraw-item">เบิกไอเทม/สิ่งของ</option>
+                    </select>
+                </div>
+
+                <!-- Money Section -->
+                <div id="vault-tx-money-section">
+                    <label class="text-xs text-gray-400 block mb-1">จำนวนเงิน ($)</label>
+                    <input type="number" id="vault-tx-amount" min="1" placeholder="ระบุจำนวนเงิน" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm">
+                </div>
+
+                <!-- Item Section -->
+                <div id="vault-tx-item-section" class="hidden space-y-3">
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">เลือกไอเทม</label>
+                        <select id="vault-tx-item-id" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm">
+                            <!-- Dynamic Item Options -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">จำนวนไอเทม</label>
+                        <input type="number" id="vault-tx-item-qty" min="1" placeholder="ระบุจำนวนชิ้น" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm">
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeVaultModal()" class="w-1/2 bg-slate-800 text-gray-300 py-2 rounded-xl text-sm">ยกเลิก</button>
+                    <button type="submit" class="w-1/2 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold shadow-lg shadow-emerald-900/40">บันทึกรายการ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Add Member Modal -->
+    <div id="modal-add-member" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-purple-400"></i> เพิ่มสมาชิกแก๊งใหม่
+                </h3>
+                <button onclick="closeAddMemberModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddMember(event)" class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">ชื่อสมาชิก / ชื่อในเมือง</label>
+                    <input type="text" id="new-member-name" required placeholder="เช่น Kenji_Viper" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 block mb-1">ยศ / ตำแหน่ง</label>
+                    <select id="new-member-rank" class="w-full bg-slate-950 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500">
+                        <option value="หัวหน้าแก๊ง">หัวหน้าแก๊ง (Boss)</option>
+                        <option value="รองหัวหน้า">รองหัวหน้า (Underboss)</option>
+                        <option value="เสนาธิการ">เสนาธิการ (Officer)</option>
+                        <option value="สมาชิกหลัก" selected>สมาชิกหลัก (Member)</option>
+                        <option value="เด็กฝึกงาน">เด็กฝึกงาน (Prospect)</option>
+                    </select>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeAddMemberModal()" class="w-1/2 bg-slate-800 text-gray-300 py-2 rounded-xl text-sm">ยกเลิก</button>
+                    <button type="submit" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-xl text-sm font-bold">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-panel px-4 py-3 rounded-xl border flex items-center space-x-3 shadow-2xl">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toast-message" class="text-sm font-medium text-white">ดำเนินการสำเร็จ</span>
+    </div>
+
+    <!-- ================= JAVASCRIPT APP LOGIC ================= -->
+    <script>
+        // Default Mock Data Structure
+        const INITIAL_MEMBERS = [
+            { id: 1, name: "Marcus_Viper", rank: "หัวหน้าแก๊ง", status: "present", delivered: 500, quota: 500 },
+            { id: 2, name: "Elena_Rider", rank: "รองหัวหน้า", status: "present", delivered: 500, quota: 500 },
+            { id: 3, name: "Alex_Blade", rank: "เสนาธิการ", status: "leave", delivered: 250, quota: 500 },
+            { id: 4, name: "Danny_Zero", rank: "สมาชิกหลัก", status: "absent", delivered: 0, quota: 500 },
+            { id: 5, name: "Sophia_Fox", rank: "สมาชิกหลัก", status: "present", delivered: 500, quota: 500 },
+            { id: 6, name: "Kaito_Shadow", rank: "เด็กฝึกงาน", status: "present", delivered: 450, quota: 500 }
+        ];
+
+        const INITIAL_VAULT_ITEMS = [
+            { id: 101, name: "ยาเสพติด (Cocaine)", icon: "fa-pills", qty: 1450, unit: "ชิ้น" },
+            { id: 102, name: "อาวุธสงคราม (AK-47)", icon: "fa-gun", qty: 18, unit: "กระบอก" },
+            { id: 103, name: "กระสุนปืน (Ammo)", icon: "fa-solid fa-box", qty: 8500, unit: "นัด" },
+            { id: 104, name: "เกราะกันกระสุน", icon: "fa-shield-heart", qty: 42, unit: "ตัว" },
+            { id: 105, name: "กล่องซ่อมรถ", icon: "fa-wrench", qty: 25, unit: "ชุด" },
+            { id: 106, name: "กล่องพยาบาล (Medkit)", icon: "fa-suitcase-medical", qty: 60, unit: "กล่อง" }
+        ];
+
+        const INITIAL_FINES = [
+            { id: 1, memberId: 4, memberName: "Danny_Zero", amount: 5000, reason: "ขาดการเช็คชื่อโดยไม่แจ้งลา", issuedBy: "Marcus_Viper", date: "2026-09-20", status: "pending" },
+            { id: 2, memberId: 3, memberName: "Alex_Blade", amount: 2000, reason: "ส่งของภารกิจล่าช้า", issuedBy: "Elena_Rider", date: "2026-09-19", status: "paid" }
+        ];
+
+        const INITIAL_VAULT_LOGS = [
+            { time: "12:15 น.", memberName: "Marcus_Viper", action: "deposit-money", item: "เงินสด", amount: "$50,000" },
+            { time: "11:30 น.", memberName: "Elena_Rider", action: "withdraw-item", item: "เกราะกันกระสุน", amount: "5 ตัว" },
+            { time: "09:00 น.", memberName: "Sophia_Fox", action: "deposit-item", item: "ยาเสพติด (Cocaine)", amount: "500 ชิ้น" }
+        ];
+
+        // State Storage
+        let appState = {
+            isAdmin: false,
+            members: JSON.parse(localStorage.getItem('viper_members')) || INITIAL_MEMBERS,
+            vaultMoney: parseInt(localStorage.getItem('viper_vault_money')) || 245000,
+            vaultItems: JSON.parse(localStorage.getItem('viper_vault_items')) || INITIAL_VAULT_ITEMS,
+            fines: JSON.parse(localStorage.getItem('viper_fines')) || INITIAL_FINES,
+            vaultLogs: JSON.parse(localStorage.getItem('viper_vault_logs')) || INITIAL_VAULT_LOGS
+        };
+
+        window.onload = function() {
+            // Set Today Date
+            const today = new Date();
+            document.getElementById('current-date-text').innerText = today.toLocaleDateString('th-TH', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            renderAll();
+        };
+
+        function saveData() {
+            localStorage.setItem('viper_members', JSON.stringify(appState.members));
+            localStorage.setItem('viper_vault_money', appState.vaultMoney.toString());
+            localStorage.setItem('viper_vault_items', JSON.stringify(appState.vaultItems));
+            localStorage.setItem('viper_fines', JSON.stringify(appState.fines));
+            localStorage.setItem('viper_vault_logs', JSON.stringify(appState.vaultLogs));
+        }
+
+        function renderAll() {
+            renderHeaderStats();
+            renderAttendanceGrid();
+            renderDeliveriesTable();
+            renderVaultSection();
+            renderFinesTable();
+            updateAdminUI();
+            saveData();
+        }
+
+        function renderHeaderStats() {
+            document.getElementById('stat-member-count').innerText = `${appState.members.length} คน`;
+            document.getElementById('stat-vault-money').innerText = `$${appState.vaultMoney.toLocaleString()}`;
+            
+            const pendingTotal = appState.fines
+                .filter(f => f.status === 'pending')
+                .reduce((sum, f) => sum + f.amount, 0);
+            
+            document.getElementById('stat-pending-fines').innerText = `$${pendingTotal.toLocaleString()}`;
+
+            const fineBadge = document.getElementById('fine-badge');
+            const pendingCount = appState.fines.filter(f => f.status === 'pending').length;
+            if(pendingCount > 0) {
+                fineBadge.innerText = pendingCount;
+                fineBadge.classList.remove('hidden');
+            } else {
+                fineBadge.classList.add('hidden');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-900/40');
+                btn.classList.add('text-gray-400');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            activeBtn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-900/40');
+            activeBtn.classList.remove('text-gray-400');
+        }
+
+        function renderAttendanceGrid() {
+            const grid = document.getElementById('attendance-grid');
+            grid.innerHTML = '';
+
+            appState.members.forEach(m => {
+                // Check if member has pending fine
+                const memberFines = appState.fines.filter(f => f.memberId === m.id && f.status === 'pending');
+                const totalPendingMoney = memberFines.reduce((acc, curr) => acc + curr.amount, 0);
+
+                let statusBadge = '';
+                if(m.status === 'present') {
+                    statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>มาเช็คชื่อ</span>`;
+                } else if(m.status === 'leave') {
+                    statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>ลาราชการ</span>`;
+                } else {
+                    statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>ขาดเช็คชื่อ</span>`;
+                }
+
+                const cardHtml = `
+                    <div class="glass-panel p-5 rounded-2xl border border-gray-800 flex flex-col justify-between space-y-4 hover:border-purple-500/40 transition duration-200">
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="text-base font-bold text-white">${m.name}</h3>
+                                    <span class="text-xs font-semibold text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/40">${m.rank}</span>
+                                </div>
+                                ${statusBadge}
+                            </div>
+
+                            ${totalPendingMoney > 0 ? `
+                                <div class="mt-3 bg-rose-950/40 border border-rose-800/50 rounded-xl p-2 flex justify-between items-center text-xs text-rose-300">
+                                    <span><i class="fa-solid fa-triangle-exclamation"></i> ค้างค่าปรับ:</span>
+                                    <span class="font-bold font-mono">$${totalPendingMoney.toLocaleString()}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Status Action Buttons -->
+                        <div class="space-y-2 pt-2 border-t border-gray-800/60">
+                            <p class="text-[11px] text-gray-500 font-medium">ลงทะเบียนสถานะวันนี้:</p>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button onclick="setAttendance(${m.id}, 'present')" class="py-1.5 rounded-lg text-xs font-medium transition duration-150 ${m.status === 'present' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-950 text-gray-400 hover:text-white hover:bg-slate-800'}">
+                                    มา
+                                </button>
+                                <button onclick="setAttendance(${m.id}, 'leave')" class="py-1.5 rounded-lg text-xs font-medium transition duration-150 ${m.status === 'leave' ? 'bg-amber-600 text-white font-bold' : 'bg-slate-950 text-gray-400 hover:text-white hover:bg-slate-800'}">
+                                    ลา
+                                </button>
+                                <button onclick="setAttendance(${m.id}, 'absent')" class="py-1.5 rounded-lg text-xs font-medium transition duration-150 ${m.status === 'absent' ? 'bg-rose-600 text-white font-bold' : 'bg-slate-950 text-gray-400 hover:text-white hover:bg-slate-800'}">
+                                    ขาด
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Admin Quick Fine Button -->
+                        <div class="admin-only hidden pt-1">
+                            <button onclick="openFineModalForMember(${m.id})" class="w-full bg-rose-950/50 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-xs py-1.5 rounded-xl transition flex items-center justify-center space-x-1.5">
+                                <i class="fa-solid fa-gavel"></i>
+                                <span>สั่งปรับเงินคนนี้</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+            });
+            updateAdminUI();
+        }
+
+        function setAttendance(memberId, status) {
+            const member = appState.members.find(m => m.id === memberId);
+            if(member) {
+                member.status = status;
+                renderAll();
+                showToast(`อัปเดตสถานะของ ${member.name} เป็น "${status === 'present' ? 'มา' : status === 'leave' ? 'ลา' : 'ขาด'}" แล้ว`);
+            }
+        }
+
+        function renderDeliveriesTable() {
+            const tbody = document.getElementById('deliveries-tbody');
+            tbody.innerHTML = '';
+
+            let completedCount = 0;
+
+            appState.members.forEach(m => {
+                const isCompleted = m.delivered >= m.quota;
+                if(isCompleted) completedCount++;
+
+                const pct = Math.min(100, Math.round((m.delivered / m.quota) * 100));
+
+                const tr = `
+                    <tr class="hover:bg-slate-900/40 transition">
+                        <td class="p-4 font-bold text-white">${m.name}</td>
+                        <td class="p-4"><span class="text-xs bg-slate-800 px-2 py-1 rounded text-gray-300">${m.rank}</span></td>
+                        <td class="p-4 font-mono">${m.quota.toLocaleString()} ชิ้น</td>
+                        <td class="p-4 font-mono text-cyan-400 font-bold">${m.delivered.toLocaleString()} ชิ้น</td>
+                        <td class="p-4">
+                            <div class="w-36">
+                                <div class="flex justify-between text-[10px] mb-1">
+                                    <span class="${isCompleted ? 'text-emerald-400 font-bold' : 'text-gray-400'}">${isCompleted ? 'ครบถ้วน' : pct + '%'}</span>
+                                </div>
+                                <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-gray-800">
+                                    <div class="bg-gradient-to-r ${isCompleted ? 'from-emerald-500 to-teal-400' : 'from-cyan-500 to-purple-500'} h-2 rounded-full" style="width: ${pct}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
+                            <button onclick="addDeliveryPrompt(${m.id})" class="bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/60 px-3 py-1 rounded-lg text-xs font-semibold transition">
+                                + ส่งของเพิ่ม
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+
+            document.getElementById('delivery-progress-text').innerText = `${completedCount} / ${appState.members.length} คน`;
+        }
+
+        function addDeliveryPrompt(memberId) {
+            const member = appState.members.find(m => m.id === memberId);
+            if(!member) return;
+
+            const amountStr = prompt(`ระบุจำนวนของที่ ${member.name} นำมาส่งเพิ่ม (ชิ้น):`, "100");
+            if(amountStr && !isNaN(amountStr)) {
+                const amount = parseInt(amountStr);
+                if(amount > 0) {
+                    member.delivered += amount;
+                    renderAll();
+                    showToast(`บันทึกการส่งของ +${amount} ชิ้น ให้ ${member.name} แล้ว`);
+                }
+            }
+        }
+
+        function renderVaultSection() {
+            document.getElementById('vault-money-display').innerText = `$${appState.vaultMoney.toLocaleString()}`;
+            document.getElementById('vault-items-count').innerText = `${appState.vaultItems.length} รายการ`;
+
+            // Items Grid
+            const grid = document.getElementById('vault-items-grid');
+            grid.innerHTML = '';
+
+            appState.vaultItems.forEach(item => {
+                const cardHtml = `
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-gray-800/80 hover:border-purple-500/40 transition flex flex-col justify-between items-center text-center space-y-2">
+                        <div class="p-3 bg-slate-950 rounded-xl text-purple-400 mb-1">
+                            <i class="fa-solid ${item.icon || 'fa-box'} text-2xl"></i>
+                        </div>
+                        <h4 class="text-xs font-bold text-gray-200 line-clamp-1">${item.name}</h4>
+                        <div class="font-mono text-base font-extrabold text-cyan-400">
+                            ${item.qty.toLocaleString()} <span class="text-[10px] text-gray-500 font-normal">${item.unit}</span>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            // Vault Logs Table
+            const logsTbody = document.getElementById('vault-logs-tbody');
+            logsTbody.innerHTML = '';
+
+            appState.vaultLogs.slice(0, 5).forEach(log => {
+                const isDeposit = log.action.includes('deposit');
+                const tr = `
+                    <tr>
+                        <td class="p-2.5 text-gray-500">${log.time}</td>
+                        <td class="p-2.5 font-semibold text-white">${log.memberName}</td>
+                        <td class="p-2.5">
+                            <span class="${isDeposit ? 'text-emerald-400 bg-emerald-950/60' : 'text-rose-400 bg-rose-950/60'} px-2 py-0.5 rounded text-[10px]">
+                                ${isDeposit ? 'ฝากเข้า' : 'เบิกออก'}
+                            </span>
+                        </td>
+                        <td class="p-2.5 text-gray-300">${log.item}</td>
+                        <td class="p-2.5 font-mono font-bold ${isDeposit ? 'text-emerald-400' : 'text-rose-400'}">${log.amount}</td>
+                    </tr>
+                `;
+                logsTbody.insertAdjacentHTML('beforeend', tr);
+            });
+        }
+
+        function renderFinesTable() {
+            const tbody = document.getElementById('fines-tbody');
+            tbody.innerHTML = '';
+
+            appState.fines.forEach(fine => {
+                const isPaid = fine.status === 'paid';
+                const tr = `
+                    <tr class="hover:bg-slate-900/40 transition">
+                        <td class="p-4 text-xs text-gray-400">${fine.date}</td>
+                        <td class="p-4 font-bold text-white">${fine.memberName}</td>
+                        <td class="p-4 text-sm text-gray-300 max-w-xs">${fine.reason}</td>
+                        <td class="p-4 font-mono font-extrabold text-rose-400">$${fine.amount.toLocaleString()}</td>
+                        <td class="p-4 text-xs text-purple-300">${fine.issuedBy}</td>
+                        <td class="p-4">
+                            <span class="${isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'} text-xs px-2.5 py-1 rounded-full font-medium">
+                                ${isPaid ? 'ชำระแล้ว' : 'ค้างชำระ'}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            ${!isPaid ? `
+                                <button onclick="markFinePaid(${fine.id})" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 px-3 py-1 rounded-lg text-xs font-semibold transition">
+                                    <i class="fa-solid fa-check"></i> ชำระเงินแล้ว
+                                </button>
+                            ` : `
+                                <span class="text-xs text-gray-500"><i class="fa-solid fa-circle-check text-emerald-500"></i> เรียบร้อย</span>
+                            `}
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', tr);
+            });
+        }
+
+        function markFinePaid(fineId) {
+            const fine = appState.fines.find(f => f.id === fineId);
+            if(fine) {
+                fine.status = 'paid';
+                // Add money to vault auto
+                appState.vaultMoney += fine.amount;
+                
+                // Add log
+                const now = new Date();
+                appState.vaultLogs.unshift({
+                    time: `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} น.`,
+                    memberName: fine.memberName,
+                    action: "deposit-money",
+                    item: "จ่ายค่าปรับเข้าคลัง",
+                    amount: `$${fine.amount.toLocaleString()}`
+                });
+
+                renderAll();
+                showToast(`ชำระค่าปรับของ ${fine.memberName} จำนวน $${fine.amount.toLocaleString()} เรียบร้อยแล้ว (นำเข้าคลังแก๊ง)`);
+            }
+        }
+
+        function toggleAdminModal() {
+            if(appState.isAdmin) {
+                appState.isAdmin = false;
+                renderAll();
+                showToast("ออกจากโหมดยศใหญ่แล้ว");
+            } else {
+                document.getElementById('modal-admin').classList.remove('hidden');
+                document.getElementById('admin-pass-input').focus();
+            }
+        }
+
+        function unlockAdmin() {
+            const input = document.getElementById('admin-pass-input').value;
+            if(input === "1234") {
+                appState.isAdmin = true;
+                document.getElementById('modal-admin').classList.add('hidden');
+                document.getElementById('admin-pass-input').value = '';
+                renderAll();
+                showToast("ปลดล็อกโหมดยศใหญ่ (Admin Mode) สำเร็จ!");
+            } else {
+                alert("รหัสผ่านไม่ถูกต้อง! (รหัสคือ 1234)");
+            }
+        }
+
+        function updateAdminUI() {
+            const adminElements = document.querySelectorAll('.admin-only');
+            const statusText = document.getElementById('admin-status-text');
+            const adminIcon = document.getElementById('admin-icon');
+
+            if(appState.isAdmin) {
+                adminElements.forEach(el => el.classList.remove('hidden'));
+                statusText.innerText = "โหมดยศใหญ่ (Admin)";
+                statusText.classList.add('text-purple-400', 'font-bold');
+                adminIcon.className = "fa-solid fa-unlock text-purple-400";
+            } else {
+                adminElements.forEach(el => el.classList.add('hidden'));
+                statusText.innerText = "โหมดปกติ";
+                statusText.classList.remove('text-purple-400', 'font-bold');
+                adminIcon.className = "fa-solid fa-lock text-gray-400";
+            }
+        }
+
+        function openIssueFineModal() {
+            populateMemberSelects();
+            document.getElementById('modal-fine').classList.remove('hidden');
+        }
+
+        function openFineModalForMember(memberId) {
+            populateMemberSelects();
+            document.getElementById('fine-member-select').value = memberId;
+            document.getElementById('modal-fine').classList.remove('hidden');
+        }
+
+        function closeFineModal() {
+            document.getElementById('modal-fine').classList.add('hidden');
+        }
+
+        function populateMemberSelects() {
+            const select = document.getElementById('fine-member-select');
+            const vaultMemberSelect = document.getElementById('vault-tx-member');
+            
+            select.innerHTML = '';
+            vaultMemberSelect.innerHTML = '';
+
+            appState.members.forEach(m => {
+                const opt = `<option value="${m.id}">${m.name} (${m.rank})</option>`;
+                select.insertAdjacentHTML('beforeend', opt);
+                vaultMemberSelect.insertAdjacentHTML('beforeend', opt);
+            });
+        }
+
+        function handleIssueFine(e) {
+            e.preventDefault();
+            const memberId = parseInt(document.getElementById('fine-member-select').value);
+            const amount = parseInt(document.getElementById('fine-amount-input').value);
+            const reason = document.getElementById('fine-reason-input').value;
+
+            const member = appState.members.find(m => m.id === memberId);
+            if(!member) return;
+
+            const today = new Date().toISOString().split('T')[0];
+
+            const newFine = {
+                id: Date.now(),
+                memberId: member.id,
+                memberName: member.name,
+                amount: amount,
+                reason: reason,
+                issuedBy: "หัวหน้าแก๊ง (Admin)",
+                date: today,
+                status: "pending"
+            };
+
+            appState.fines.unshift(newFine);
+            closeFineModal();
+            document.getElementById('fine-form').reset();
+            renderAll();
+            showToast(`สั่งปรับเงิน ${member.name} จำนวน $${amount.toLocaleString()} เรียบร้อย`);
+        }
+
+        function openVaultTransactionModal() {
+            populateMemberSelects();
+            populateVaultItemSelects();
+            document.getElementById('modal-vault-tx').classList.remove('hidden');
+        }
+
+        function closeVaultModal() {
+            document.getElementById('modal-vault-tx').classList.add('hidden');
+        }
+
+        function populateVaultItemSelects() {
+            const select = document.getElementById('vault-tx-item-id');
+            select.innerHTML = '';
+            appState.vaultItems.forEach(item => {
+                select.insertAdjacentHTML('beforeend', `<option value="${item.id}">${item.name} (มีอยู่ ${item.qty} ${item.unit})</option>`);
+            });
+        }
+
+        function toggleVaultInputTypes() {
+            const type = document.getElementById('vault-tx-type').value;
+            const moneySec = document.getElementById('vault-tx-money-section');
+            const itemSec = document.getElementById('vault-tx-item-section');
+
+            if(type.includes('money')) {
+                moneySec.classList.remove('hidden');
+                itemSec.classList.add('hidden');
+            } else {
+                moneySec.classList.add('hidden');
+                itemSec.classList.remove('hidden');
+            }
+        }
+
+        function handleVaultTransaction(e) {
+            e.preventDefault();
+            const memberId = parseInt(document.getElementById('vault-tx-member').value);
+            const txType = document.getElementById('vault-tx-type').value;
+            const member = appState.members.find(m => m.id === memberId);
+
+            if(!member) return;
+
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} น.`;
+
+            if(txType.includes('money')) {
+                const amount = parseInt(document.getElementById('vault-tx-amount').value);
+                if(!amount || amount <= 0) return;
+
+                if(txType === 'withdraw-money' && amount > appState.vaultMoney) {
+                    alert('ยอดเงินในคลังแก๊งมีไม่เพียงพอ!');
+                    return;
+                }
+
+                if(txType === 'deposit-money') {
+                    appState.vaultMoney += amount;
+                } else {
+                    appState.vaultMoney -= amount;
+                }
+
+                appState.vaultLogs.unshift({
+                    time: timeStr,
+                    memberName: member.name,
+                    action: txType,
+                    item: "เงินสด",
+                    amount: `$${amount.toLocaleString()}`
+                });
+
+            } else {
+                const itemId = parseInt(document.getElementById('vault-tx-item-id').value);
+                const qty = parseInt(document.getElementById('vault-tx-item-qty').value);
+                const item = appState.vaultItems.find(i => i.id === itemId);
+
+                if(!item || !qty || qty <= 0) return;
+
+                if(txType === 'withdraw-item' && qty > item.qty) {
+                    alert('จำนวนไอเทมในคลังมีไม่เพียงพอ!');
+                    return;
+                }
+
+                if(txType === 'deposit-item') {
+                    item.qty += qty;
+                } else {
+                    item.qty -= qty;
+                }
+
+                appState.vaultLogs.unshift({
+                    time: timeStr,
+                    memberName: member.name,
+                    action: txType,
+                    item: item.name,
+                    amount: `${qty} ${item.unit}`
+                });
+            }
+
+            closeVaultModal();
+            document.getElementById('vault-tx-form').reset();
+            renderAll();
+            showToast('บันทึกรายการคลังเรียบร้อยแล้ว');
+        }
+
+        function openAddMemberModal() {
+            document.getElementById('modal-add-member').classList.remove('hidden');
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('modal-add-member').classList.add('hidden');
+        }
+
+        function handleAddMember(e) {
+            e.preventDefault();
+            const name = document.getElementById('new-member-name').value;
+            const rank = document.getElementById('new-member-rank').value;
+
+            const newMember = {
+                id: Date.now(),
+                name: name,
+                rank: rank,
+                status: "present",
+                delivered: 0,
+                quota: 500
+            };
+
+            appState.members.push(newMember);
+            closeAddMemberModal();
+            renderAll();
+            showToast(`เพิ่มสมาชิกใหม่ ${name} เรียบร้อยแล้ว`);
+        }
+
+        function resetDailyAttendance() {
+            if(confirm("คุณต้องการรีเซ็ตสถานะการเช็คชื่อและการส่งของของสมาชิกทุกคนสำหรับวันใหม่หรือไม่?")) {
+                appState.members.forEach(m => {
+                    m.status = "present";
+                    m.delivered = 0;
+                });
+                renderAll();
+                showToast("รีเซ็ตข้อมูลเช็คชื่อประจำวันเรียบร้อยแล้ว");
+            }
+        }
+
+        function openAddItemModal() {
+            const name = prompt("ระบุชื่อไอเทมใหม่ที่ต้องการเพิ่มในคลัง:");
+            if(name) {
+                const unit = prompt("ระบุหน่วยนับ (เช่น ชิ้น, กล่อง, นัด):", "ชิ้น");
+                appState.vaultItems.push({
+                    id: Date.now(),
+                    name: name,
+                    icon: "fa-box",
+                    qty: 0,
+                    unit: unit || "ชิ้น"
+                });
+                renderAll();
+                showToast(`เพิ่มไอเทม ${name} ในระบบสต็อกแล้ว`);
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
